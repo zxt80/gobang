@@ -8,718 +8,339 @@ using System.Threading.Tasks;
 
 namespace gobang
 {
-    class Chessboard
+    class ChessBoard
     {
-        private bool bOver = false;
-        private List<Chessman> chess;
+        // 棋盘距离窗口的边界
+        public int Margin { set; get; }
 
-        private Chessman.TYPE[,] chessMap;
+        // 棋盘尺寸 13，15，17 等奇数
+        private int size;
+        public int GrideSize { set; get; }
+        private int chessRadius;
+        private Color gridColor;
+        private Color backGroundColor;
 
-        private Point[] winChess = new Point[5];
+        // 先手棋子颜色
+        public Color FristColor { set; get; }
 
-        public int GridCount { set; get; }
+        // 棋盘中的棋子
+        public ChessType[,] ChessMap { set; get; }
 
-        public int GridWidth { set; get; }
+        // 最后一次落子位置
+        private Point LastChessPoint = new Point(-1, -1);
 
-        public int OriginX { set; get; }
 
-        public int OriginY { set; get; }
+        // 棋子数量
+        public int chessCount = 0;
 
-        public Point CursorPoint { set; get; }
+        // 获胜棋子位置
+        List<Point> winPoint;
 
-        private Rectangle ChessRect { set; get; }
+        // 当前选择点的位置
+        public Point SelectPoint { set; get; }
 
-        private int[,] scorMap;
-
-        public bool IsGameOver(out Chessman.TYPE type)
+        // 是否在棋盘中选择了点
+        public bool bSelectPoint { set; get; }
+        public int Size
         {
-            type = Chessman.TYPE.NONE;
-            if (chess.Count < 9)
-                return false;
-
-            int count = 1;
-            Chessman ch = chess.Last();
-            winChess[0] = new Point(ch.X,ch.Y);
-
-            // 横
-            for (int i= ch.X-1;i>=0;i--)
+            set
             {
-                if(chessMap[i,ch.Y] == ch.Type)
+                if(value%2!=0)
                 {
-                    winChess[count++] = new Point(i, ch.Y);
-                }
-                else
-                {
-                    break;
+                    size = value;
+                    ChessMap = new ChessType[size, size];
                 }
             }
-
-            for (int i = ch.X +1 ; i < GridCount+1; i++)
+            get 
             {
-                if (chessMap[i, ch.Y] == ch.Type)
-                {
-                    winChess[count++] = new Point(i, ch.Y);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            if (count >= 5)
-            {
-                type = ch.Type;
-                bOver = true;
-                return true;
-            }
-
-            // 竖
-            count = 1;
-            for (int i = ch.Y - 1; i >= 0; i--)
-            {
-                if (chessMap[ch.X, i] == ch.Type)
-                {
-                    winChess[count++] = new Point(ch.X, i);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            for (int i = ch.Y + 1; i < GridCount + 1; i++)
-            {
-                if (chessMap[ch.X, i] == ch.Type)
-                {
-                    winChess[count++] = new Point(ch.X, i);
-                }
-                else
-                {
-                    break;
-                }             
-                
-            }
-            if (count >= 5)
-            {
-                type = ch.Type;
-                bOver = true;
-                return true;
-            }
-
-            // 左斜
-            count = 1;
-            for (int i = ch.X - 1,j = ch.Y - 1; i>=0 && j>=0;i--,j--)
-            {
-                if (chessMap[i,j] == ch.Type)
-                {
-                    winChess[count++] = new Point(i,j);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            for (int i = ch.X + 1, j = ch.Y + 1; i < GridCount+1 && j <GridCount+1; i++, j++)
-            {
-                if (chessMap[i, j] == ch.Type)
-                {
-                    winChess[count++] = new Point(i, j);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            if (count >= 5)
-            {
-                type = ch.Type;
-                bOver = true;
-                return true;
-            }
-
-
-            // 右斜
-            count = 1;
-            for (int i = ch.X + 1, j = ch.Y - 1; i < GridCount+1 && j >= 0; i++, j--)
-            {
-                if (chessMap[i, j] == ch.Type)
-                {
-                    winChess[count++] = new Point(i, j);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            for (int i = ch.X - 1, j = ch.Y + 1; i >=0 && j < GridCount + 1; i--, j++)
-            {
-                if (chessMap[i, j] == ch.Type)
-                {
-                    winChess[count++] = new Point(i, j);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            if (count >= 5)
-            {
-                type = ch.Type;
-                bOver = true;
-                return true;
-            }
-
-            return false;
+                return size;
+            } 
         }
 
-        public Chessboard() 
+        public ChessBoard()
         {
-            chess = new List<Chessman>();
-            
+            Init();
         }
-        public void Init()
+
+        private void Init()
         {
-            chessMap = new Chessman.TYPE[GridCount+1, GridCount+1];
-            ChessRect = new Rectangle(OriginX, OriginY, GridCount * GridWidth, GridCount * GridWidth);
-            scorMap = new int[GridCount + 1, GridCount + 1];
-            Rest();
+            Margin = 30;
+            GrideSize = 40;
+            chessRadius = 15;
+            gridColor = Color.Gray;
+            backGroundColor = Color.FromArgb(255, 224, 224, 224);
+
+            FristColor = Color.Black;
+
+            winPoint = new List<Point>();
+            bSelectPoint = false;
         }
 
         public void Rest()
         {
-            bOver = false;
-            chess.Clear();
-            for (int i=0;i<GridCount+1;i++)
+            winPoint.Clear();
+            LastChessPoint.X = -1;
+            LastChessPoint.Y = -1;
+            bSelectPoint = false;
+            chessCount = 0;
+
+            for(int i=0;i<size;i++)
             {
-                for(int j=0;j<GridCount+1;j++)
+                for(int j=0;j<size;j++)
                 {
-                    chessMap[i, j] = Chessman.TYPE.NONE;
-                }
-            }
-        }
-
-        public void AddAiChess()
-        {
-
-        }
-
-        // ai 算法 计算得分
-        // type : ai 棋子类型
-        private void CalSocle(Chessman.TYPE aiType)
-        {
-            Point[] dirPoints = new Point[4];
-            dirPoints[0] = new Point(-1,0);
-            dirPoints[1] = new Point(-1,-1);
-            dirPoints[2] = new Point(0,-1);
-            dirPoints[3] = new Point(1,-1);
-
-            for (int i=0;i<GridCount+1;i++)
-            {
-                for(int j=0;j<GridCount+1;j++)
-                {
-                    scorMap[i, j] = 0;
-
-                    if (chessMap[i, j] != Chessman.TYPE.NONE)
-                        continue;
-
-                    // 计算8个方向的得分
-                    for(int n=0;n<4;n++)
-                    {
-                        int aiCount = 0, humenCount = 0, emptyCount = 0;
-                        // 计算4个点
-                        for (int c = 1; c < 5; c++)
-                        {
-                            int x1 = i + dirPoints[n].X * c;
-                            int y1 = j + dirPoints[n].Y * c;
-
-                            if (x1 > GridCount || x1 < 0 || y1 > GridCount || y1 < 0)
-                                break;
-
-                            if (chessMap[x1, y1] == aiType)
-                            {
-                                aiCount++;
-                            }
-                            else if (chessMap[x1, y1] == Chessman.TYPE.NONE)
-                            {
-                                emptyCount++;
-                                break;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        for (int c = 1; c < 5; c++)
-                        {
-                            int x1 = i - dirPoints[n].X * c;
-                            int y1 = j - dirPoints[n].Y * c;
-
-                            if (x1 > GridCount || x1 < 0 || y1 > GridCount || y1 < 0)
-                                break;
-
-                            if (chessMap[x1, y1] == aiType)
-                            {
-                                aiCount++;
-                            }
-                            else if (chessMap[x1, y1] == Chessman.TYPE.NONE)
-                            {
-                                emptyCount++;
-                                break;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                        if (aiCount == 0)
-                        {
-                            scorMap[i, j] += 5;
-                        }
-                        else if (aiCount == 1)
-                        {
-                            scorMap[i, j] += 10;
-                        }
-                        else if (aiCount == 2)
-                        {
-                            if (emptyCount > 1)
-                                scorMap[i, j] += 50;
-                            else
-                                scorMap[i, j] += 25;
-                        }
-                        else if (aiCount == 3)
-                        {
-                            if (emptyCount > 1)
-                                scorMap[i, j] += 10000;
-                            else
-                                scorMap[i, j] = 55;
-                        }
-                        else if (aiCount >= 4)
-                        {
-                            scorMap[i, j] += 30000;
-                        }
-
-                        emptyCount = 0;
-                        for (int c = 1; c < 5; c++)
-                        {
-                            int x1 = i + dirPoints[n].X * c;
-                            int y1 = j + dirPoints[n].Y * c;
-
-                            if (x1 > GridCount || x1 < 0 || y1 > GridCount || y1 < 0)
-                                break;
-
-                            if (chessMap[x1, y1] == Chessman.TYPE.NONE)
-                            {
-                                emptyCount++;
-                                break;
-                            }
-                            else if (chessMap[x1, y1] != aiType)
-                            {
-                                humenCount++;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        for (int c = 1; c < 5; c++)
-                        {
-                            int x1 = i - dirPoints[n].X * c;
-                            int y1 = j - dirPoints[n].Y * c;
-
-                            if (x1 > GridCount || x1 < 0 || y1 > GridCount || y1 < 0)
-                                break;
-
-                            if (chessMap[x1, y1] == Chessman.TYPE.NONE)
-                            {
-                                emptyCount++;
-                                break;
-                            }
-                            else if (chessMap[x1, y1] != aiType)
-                            {
-                                humenCount++;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-
-                        if (humenCount == 0)
-                        {
-                            scorMap[i, j] += 5;
-                        }
-                        else if (humenCount == 1)
-                        {
-                            scorMap[i, j] += 10;
-                        }
-                        else if (humenCount == 2)
-                        {
-                            if (emptyCount > 1)
-                                scorMap[i, j] += 40;
-                            else
-                                scorMap[i, j] += 30;
-                        }
-                        else if (humenCount == 3)
-                        {
-                            if (emptyCount > 1)
-                                scorMap[i, j] += 200;
-                            else
-                                scorMap[i, j] += 60;
-                        }
-                        else if (humenCount >= 4)
-                        {
-                            scorMap[i, j] += 20000;
-                        }
-
-                    }
-                    //for(int x=-1;x<=1;x++)
-                    //{
-                    //    for(int y=-1;y<=1;y++)
-                    //    {
-                    //        if (x == 0 && y == 0) continue;
-
-                    //        int aiCount = 0, humenCount = 0, emptyCount = 0;
-                            
-                    //        // 计算4个点
-                    //        for (int c = 1; c < 5; c++)
-                    //        {
-                    //            int x1 = i + x * c;
-                    //            int y1 = j + y * c;
-
-                    //            if (x1 > GridCount || x1 < 0 || y1 > GridCount || y1 < 0)
-                    //                break;
-
-                    //            if (chessMap[x1, y1] == aiType)
-                    //            {
-                    //                aiCount++;
-                    //            }
-                    //            else if (chessMap[x1, y1] == Chessman.TYPE.NONE)
-                    //            {
-                    //                emptyCount++;
-                    //                break;
-                    //            }
-                    //            else
-                    //            {
-                    //                break;
-                    //            }
-                    //        }
-
-                    //        for (int c = 1; c < 5; c++)
-                    //        {
-                    //            int x1 = i - x * c;
-                    //            int y1 = j - y * c;
-
-                    //            if (x1 > GridCount || x1 < 0 || y1 > GridCount || y1 < 0)
-                    //                break;
-
-                    //            if (chessMap[x1, y1] == aiType)
-                    //            {
-                    //                aiCount++;
-                    //            }
-                    //            else if (chessMap[x1, y1] == Chessman.TYPE.NONE)
-                    //            {
-                    //                emptyCount++;
-                    //                break;
-                    //            }
-                    //            else
-                    //            {
-                    //                break;
-                    //            }
-                    //        }
-
-                    //        if (aiCount==0)
-                    //        {
-                    //            scorMap[i, j] = 5;
-                    //        }
-                    //        else if(aiCount==1)
-                    //        {
-                    //            scorMap[i, j] = 10;
-                    //        }
-                    //        else if(aiCount==2)
-                    //        {
-                    //            if(emptyCount>1)
-                    //                scorMap[i, j] = 50;
-                    //            else
-                    //                scorMap[i, j] = 25;
-                    //        }
-                    //        else if (aiCount == 3)
-                    //        {
-                    //            if (emptyCount > 1)
-                    //                scorMap[i, j] = 10000;
-                    //            else
-                    //                scorMap[i, j] = 55;
-                    //        }
-                    //        else if (aiCount >= 4)
-                    //        {
-                    //             scorMap[i, j] = 30000;
-                    //        }
-
-                    //        emptyCount = 0;
-                    //        for (int c = 1; c < 5; c++)
-                    //        {
-                    //            int x1 = i + x * c;
-                    //            int y1 = j + y * c;
-
-                    //            if (x1 > GridCount || x1 < 0 || y1 > GridCount || y1 < 0)
-                    //                break;
-
-                    //            if (chessMap[x1, y1] == Chessman.TYPE.NONE)
-                    //            {
-                    //                emptyCount++;
-                    //                break;
-                    //            }
-                    //            else if (chessMap[x1, y1] != aiType)
-                    //            {
-                    //                humenCount++;
-                    //            }
-                    //            else
-                    //            {
-                    //                break;
-                    //            }
-                    //        }
-
-                    //        for (int c = 1; c < 5; c++)
-                    //        {
-                    //            int x1 = i - x * c;
-                    //            int y1 = j - y * c;
-
-                    //            if (x1 > GridCount || x1 < 0 || y1 > GridCount || y1 < 0)
-                    //                break;
-
-                    //            if (chessMap[x1, y1] == Chessman.TYPE.NONE)
-                    //            {
-                    //                emptyCount++;
-                    //                break;
-                    //            }
-                    //            else if (chessMap[x1, y1] != aiType)
-                    //            {
-                    //                humenCount++;
-                    //            }
-                    //            else
-                    //            {
-                    //                break;
-                    //            }
-                    //        }
-
-                    //        if (humenCount == 0)
-                    //        {
-                    //            scorMap[i, j] += 5;
-                    //        }
-                    //        else if (humenCount == 1)
-                    //        {
-                    //            scorMap[i, j] += 10;
-                    //        }
-                    //        else if (humenCount == 2)
-                    //        {
-                    //            if (emptyCount > 1)
-                    //                scorMap[i, j] += 40;
-                    //            else
-                    //                scorMap[i, j] += 30;
-                    //        }
-                    //        else if (humenCount == 3)
-                    //        {
-                    //            if (emptyCount > 1)
-                    //                scorMap[i, j] += 200;
-                    //            else
-                    //                scorMap[i, j] += 60;
-                    //        }
-                    //        else if (humenCount >= 4)
-                    //        {
-                    //            scorMap[i, j] += 20000;
-                    //        }
-
-                    //    }
-                    //}                    
-                   
-                }
-            }
-        }
-
-        private Point Think(Chessman.TYPE aiType)
-        {
-            int maxScore = 0;
-            List<Point> points = new List<Point>();
-            CalSocle(aiType);
-
-            for(int i=0;i<GridCount+1;i++)
-            {
-                for(int j=0;j<GridCount+1;j++)
-                {
-                    if(scorMap[i,j]>maxScore)
-                    {
-                        maxScore = scorMap[i, j];
-                        points.Clear();
-                        points.Add(new Point(i, j));
-                    }
-                    else if(scorMap[i,j]==maxScore)
-                    {
-                        points.Add(new Point(i, j));
-                    }
+                    ChessMap[i, j] = ChessType.NONE;
                 }
             }
 
-            Random rd = new Random();
-            return points.ElementAt(rd.Next(0, points.Count));
         }
 
-
-        public void ClearChesss()
+        // 落子 
+        // pt:棋子在棋盘中的位置
+        public bool DownChess(Point pt,ChessType type)
         {
-            chess.Clear();
-        }
-
-        public bool AddAiChess(Chessman.TYPE aiType)
-        {
-            Point pt = Think(aiType);
-
-            // 添加新棋子
-            Chessman ch = new Chessman(pt, this);
-            ch.Type = aiType;
-            chess.Add(ch);
-
-            // 设置棋子在棋盘中的位置
-            chessMap[pt.X, pt.Y] = aiType;
-
-            return true;
-        }
-
-        public bool AddChess(Point pt,Chessman.TYPE type)
-        {
-            if(!ChessRect.Contains(pt))
-            {
+            if (pt.X < 0 || pt.Y < 0 || pt.X >= size || pt.Y >= size)
                 return false;
-            }
-
-            Point grid = GetNearestPoint(pt);
-
-            // 去除重复的点
-            foreach(var tmp in chess)
+            if(ChessMap[pt.X,pt.Y] == ChessType.NONE)
             {
-                if(tmp.X==grid.X && tmp.Y==grid.Y)
+                ChessMap[pt.X, pt.Y] = type;
+                chessCount++;
+
+                LastChessPoint = pt;
+                return true;
+            }
+            return false;
+        }
+
+        // 比赛是否获胜
+        public ChessType IsGameOver()
+        {
+            if (chessCount < 9)
+                return ChessType.NONE;
+
+            winPoint.Add(LastChessPoint);
+
+            ChessType type = chessCount % 2 == 0 ? ChessType.SECOND : ChessType.FRIST;
+
+            // 横
+            for (int i = LastChessPoint.X - 1; i >= 0; i--)
+            {
+                if (ChessMap[i, LastChessPoint.Y] == type)
                 {
-                    return false;
+                    winPoint.Add(new Point(i, LastChessPoint.Y));
+                }
+                else
+                {
+                    break;
                 }
             }
 
-            // 添加新棋子
-            Chessman ch = new Chessman(grid,this);
-            ch.Type = type;
-            chess.Add(ch);
-
-            // 设置棋子在棋盘中的位置
-            chessMap[grid.X, grid.Y] = type;
-
-            return true;
-        }
-
-        private Point GetNearestPoint(Point pt)
-        {
-            int x = pt.X - OriginX;
-            int y = pt.Y - OriginY;
-            int nx, ny;
-            if (x < 0 && x > -GridWidth / 2)
+            for (int i = LastChessPoint.X + 1; i < size; i++)
             {
-                nx = 0;
+                if (ChessMap[i, LastChessPoint.Y] == type)
+                {
+                    winPoint.Add(new Point(i, LastChessPoint.Y));
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (winPoint.Count >= 5)
+            {
+                return type;
             }
             else
             {
-                nx = x / GridWidth + ((x % GridWidth > GridWidth / 2) ? 1 : 0);
+                winPoint.Clear();
+                winPoint.Add(LastChessPoint);
+            }
+            
+
+            // 竖            
+            for (int i = LastChessPoint.Y - 1; i >= 0; i--)
+            {
+                if (ChessMap[LastChessPoint.X, i] == type)
+                {
+                    winPoint.Add( new Point(LastChessPoint.X, i));
+                }
+                else
+                {
+                    break;
+                }
             }
 
-            if (y < 0 && y > -GridWidth / 2)
+            for (int i = LastChessPoint.Y + 1; i < size; i++)
             {
-                ny = 0;
+                if (ChessMap[LastChessPoint.X, i] == type)
+                {
+                    winPoint.Add(new Point(LastChessPoint.X, i));
+                }
+                else
+                {
+                    break;
+                }
+
+            }
+            if (winPoint.Count >= 5)
+            {
+                return type;
             }
             else
             {
-                ny = y / GridWidth + ((y % GridWidth > GridWidth / 2) ? 1 : 0);
+                winPoint.Clear();
+                winPoint.Add(LastChessPoint);
             }
 
-            return new Point(nx,ny);            
+            // 左斜
+            for (int i = LastChessPoint.X - 1, j = LastChessPoint.Y - 1; i >= 0 && j >= 0; i--, j--)
+            {
+                if (ChessMap[i, j] == type)
+                {
+                    winPoint.Add(new Point(i, j));
+                }
+                else
+                {
+                    break;
+                }
+            }
+            for (int i = LastChessPoint.X + 1, j = LastChessPoint.Y + 1; i < size && j < size; i++, j++)
+            {
+                if (ChessMap[i, j] == type)
+                {
+                    winPoint.Add(new Point(i, j));
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (winPoint.Count >= 5)
+            {
+                return type;
+            }
+            else
+            {
+                winPoint.Clear();
+                winPoint.Add(LastChessPoint);
+            }
 
+
+            // 右斜
+            for (int i = LastChessPoint.X + 1, j = LastChessPoint.Y - 1; i < size && j >= 0; i++, j--)
+            {
+                if (ChessMap[i, j] == type)
+                {
+                    winPoint.Add(new Point(i, j));
+                }
+                else
+                {
+                    break;
+                }
+            }
+            for (int i = LastChessPoint.X - 1, j = LastChessPoint.Y + 1; i >= 0 && j < size; i--, j++)
+            {
+                if (ChessMap[i, j] == type)
+                {
+                    winPoint.Add(new Point(i, j));
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (winPoint.Count >= 5)
+            {
+                return type;
+            }
+            else
+            {
+                winPoint.Clear();
+            }
+
+            return ChessType.NONE;
         }
 
         public void Draw(Graphics g)
         {
+            int boardLen = (size - 1) * GrideSize;
+            Color second = FristColor == Color.White ? Color.Black : Color.White;
+
             // 双缓冲 先绘制到图片中
-            Bitmap bt = new Bitmap((GridCount+1)*GridWidth+OriginX, (GridCount+1) * GridWidth+OriginY);
+            Bitmap bt = new Bitmap(Margin * 2+ boardLen, Margin * 2+ boardLen);
             Graphics bg = Graphics.FromImage(bt);
             bg.SmoothingMode = SmoothingMode.HighQuality; //高质量
 
-            Pen pn = new Pen(Color.Gray);
-            pn.Width = 1;
+            Pen pn = new Pen(gridColor);
 
             // 清除
-            bg.Clear( Color.FromArgb(255,224,224,224));
+            bg.Clear(backGroundColor);
 
-            // 绘制当前鼠标位置
-            DrawCursorCell(bg);
-
-
-            // 绘制棋盘 横线
-            for (int i = 1; i < GridCount; i++)
+            // 绘制棋盘
+            for (int i = 0; i < size; i++)
             {
-                int x1 = OriginX, x2 = OriginX + GridCount * GridWidth;
-                int y = OriginY + i * GridWidth;
+                if (i == 0 || i == size-1)
+                    pn.Width = 2;
+                else
+                    pn.Width = 1;
+
+                int x1 = Margin, x2 = Margin + boardLen;
+                int y = Margin + i * GrideSize;
 
                 bg.DrawLine(pn, x1, y, x2, y);
+                bg.DrawLine(pn, y, x1, y, x2);
             }
-
-            // 竖线
-            for (int i = 1; i < GridCount; i++)
-            {
-                int y1 = OriginY, y2 = OriginY + GridCount * GridWidth;
-                int x = OriginX + i * GridWidth;
-
-                bg.DrawLine(pn, x, y1, x, y2);
-            }
-
-            // 边框
-            int len = GridWidth * GridCount;
-            pn.Width = 2;
-            bg.DrawLine(pn, OriginX, OriginY, OriginX+ len, OriginY);
-            bg.DrawLine(pn, OriginX, OriginY, OriginX, OriginY+ len);
-            bg.DrawLine(pn, OriginX+ len, OriginY, OriginX+ len, OriginY+ len);
-            bg.DrawLine(pn, OriginX, OriginY+ len, OriginX+ len, OriginY+ len);
 
             // 参考点
-            int center = GridCount / 2;
-            int n = (int)( GridCount/2 / 8.0 * 5.0);
-            DrawPoint(bg, OriginX + n * GridWidth, OriginY + n * GridWidth, 5, Color.Gray);
-            DrawPoint(bg, OriginX + (GridCount- n) * GridWidth, OriginY + n * GridWidth, 5, Color.Gray);
-            DrawPoint(bg, OriginX + 5 * GridWidth, OriginY + (GridCount - n) * GridWidth, 5, Color.Gray);
-            DrawPoint(bg, OriginX + (GridCount - n) * GridWidth, OriginY + (GridCount - n) * GridWidth, 5, Color.Gray);
-            DrawPoint(bg, OriginX + center * GridWidth, OriginY + center * GridWidth, 5, Color.Gray);
+            int center = size / 2;
+            int n = (int)((size-1) / 2 / 8.0 * 5.0);
+            DrawPoint(bg, Margin + n * GrideSize, Margin + n * GrideSize, 5, Color.Gray);
+            DrawPoint(bg, Margin + (size - 1 - n) * GrideSize, Margin + n * GrideSize, 5, Color.Gray);
+            DrawPoint(bg, Margin + 5 * GrideSize, Margin + (size - 1 - n) * GrideSize, 5, Color.Gray);
+            DrawPoint(bg, Margin + (size - 1 - n) * GrideSize, Margin + (size - 1 - n) * GrideSize, 5, Color.Gray);
+            DrawPoint(bg, Margin + center * GrideSize, Margin + center * GrideSize, 5, Color.Gray);
 
-            // 绘制棋子
-            foreach(var tmp in chess)
+            // 画棋子
+            for(int i=0;i<size;i++)
             {
-                tmp.Draw(bg);
-            }  
-            
-            // 绘制最后一个棋子的标记
-            if(chess.Count>0)
-            {
-                chess.Last().DrawFlag(bg);
-            }
-
-            // 绘制赢棋子
-            if(bOver )
-            {
-                foreach (var tmp in chess)
+                for(int j=0;j<size;j++)
                 {
-                    for(int i=0;i<5;i++)
+                    int x = Margin + GrideSize * i;
+                    int y = Margin + GrideSize * j;
+                    if(ChessMap[i,j]==ChessType.FRIST)
                     {
-                        if (tmp.X == winChess[i].X && tmp.Y == winChess[i].Y)
-                            tmp.DrawFlag(bg);
-                    }                    
+                        DrawPoint(bg, x, y, chessRadius, FristColor);
+                    }
+                    else if(ChessMap[i, j] == ChessType.SECOND)
+                    {
+                        DrawPoint(bg, x, y, chessRadius, second);
+                    }
                 }
             }
-            
 
-            // 绘制图片，一次将全部内容绘制出来
-            g.DrawImage(bt,0,0);
+            // 最后一次落棋的标记
+            if(chessCount>0)
+            {
+                DrawCross(bg,LastChessPoint);
+            }
+
+            // 绘制赢棋标记
+            foreach(Point pt in winPoint)
+            {
+                DrawCross(bg,pt);
+            }
+
+            // 绘制当前鼠标在棋盘中的位置
+            if(bSelectPoint)
+            {
+                Point cursor = SelectPoint;
+                if(ScreenPoint2Board(ref cursor))
+                {
+                    DrawCursorCell(bg, cursor);
+                }
+            }
+
+            // 将图片绘制到内存中去
+            g.DrawImage(bt, 0, 0);
 
             pn.Dispose();
             bg.Dispose();
@@ -735,25 +356,31 @@ namespace gobang
 
         }
 
-        private void DrawCursorCell(Graphics g)
+        private void DrawCross(Graphics g, Point pt)
         {
-            if (!ChessRect.Contains(CursorPoint))
-            {
-                return;
-            }            
+            Pen pn = new Pen(Color.Red);
+            int x = pt.X * GrideSize + Margin;
+            int y = pt.Y * GrideSize + Margin;
 
-            Point grid = GetNearestPoint(CursorPoint);
+            int crossLen = chessRadius / 3 * 2;
+            g.DrawLine(pn, x - crossLen, y, x + crossLen, y);
+            g.DrawLine(pn, x, y - crossLen, x, y + crossLen);
 
+            pn.Dispose();
+        }
+
+        private void DrawCursorCell(Graphics g, Point boardPoint)
+        {
             //检查该位置是否有棋子
-            if(chessMap[grid.X,grid.Y] == Chessman.TYPE.BLACK || chessMap[grid.X, grid.Y]==Chessman.TYPE.WHITE)
+            if (ChessMap[boardPoint.X, boardPoint.Y] != ChessType.NONE)
             {
                 return;
             }
 
             Pen pn = new Pen(Color.Red);
 
-            int width = GridWidth  / 8;
-            Point center = new Point(grid.X * GridWidth + OriginX, grid.Y * GridWidth + OriginY);
+            int width = GrideSize / 8;
+            Point center = new Point(boardPoint.X * GrideSize + Margin, boardPoint.Y * GrideSize + Margin);
             Point p1 = new Point(-width * 3, -width * 3);
             Point p2 = new Point(-width, -width * 3);
             Point p3 = new Point(-width * 3, -width);
@@ -761,8 +388,8 @@ namespace gobang
             p2.Offset(center);
             p3.Offset(center);
 
-            g.DrawLine(pn, p1,p2);
-            g.DrawLine(pn, p1,p3);
+            g.DrawLine(pn, p1, p2);
+            g.DrawLine(pn, p1, p3);
 
             p1.X = width * 3 + center.X;
             p2.X = width + center.X;
@@ -772,7 +399,7 @@ namespace gobang
 
             p1.Y = width * 3 + center.Y;
             p2.Y = width * 3 + center.Y;
-            p3.Y = width  + center.Y;
+            p3.Y = width + center.Y;
             g.DrawLine(pn, p1, p2);
             g.DrawLine(pn, p1, p3);
 
@@ -783,6 +410,41 @@ namespace gobang
             g.DrawLine(pn, p1, p3);
 
             pn.Dispose();
+        }
+
+        public bool ScreenPoint2Board(ref Point pt)
+        {
+            int x = pt.X - Margin;
+            int y = pt.Y - Margin;
+            int nx, ny;
+            if (x < 0 && x > -GrideSize / 2)
+            {
+                nx = 0;
+            }
+            else
+            {
+                nx = x / GrideSize + ((x % GrideSize > GrideSize / 2) ? 1 : 0);
+            }
+
+            if (y < 0 && y > -GrideSize / 2)
+            {
+                ny = 0;
+            }
+            else
+            {
+                ny = y / GrideSize + ((y % GrideSize > GrideSize / 2) ? 1 : 0);
+            }
+
+            if(nx<0|| nx >=size||ny<0 ||ny>= size)
+            {
+                return false;
+            }
+            else
+            {
+                pt.X = nx;
+                pt.Y = ny;
+                return true;
+            }
         }
 
     }

@@ -1,7 +1,7 @@
 ﻿
 namespace gobang
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -29,38 +29,30 @@ namespace gobang
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.btn_start = new System.Windows.Forms.Button();
-            this.checkBox_ai = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.rbt_color_black = new System.Windows.Forms.RadioButton();
             this.rbt_color_white = new System.Windows.Forms.RadioButton();
+            this.rbt_color_black = new System.Windows.Forms.RadioButton();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.rbt_second = new System.Windows.Forms.RadioButton();
             this.rbt_frist = new System.Windows.Forms.RadioButton();
+            this.label_count = new System.Windows.Forms.Label();
+            this.label_time = new System.Windows.Forms.Label();
+            this.timer = new System.Windows.Forms.Timer(this.components);
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // btn_start
             // 
-            this.btn_start.Location = new System.Drawing.Point(726, 327);
+            this.btn_start.Location = new System.Drawing.Point(726, 285);
             this.btn_start.Name = "btn_start";
             this.btn_start.Size = new System.Drawing.Size(150, 40);
             this.btn_start.TabIndex = 0;
             this.btn_start.Text = "开始";
             this.btn_start.UseVisualStyleBackColor = true;
             this.btn_start.Click += new System.EventHandler(this.button1_Click);
-            // 
-            // checkBox_ai
-            // 
-            this.checkBox_ai.AutoSize = true;
-            this.checkBox_ai.Location = new System.Drawing.Point(726, 276);
-            this.checkBox_ai.Name = "checkBox_ai";
-            this.checkBox_ai.Size = new System.Drawing.Size(90, 22);
-            this.checkBox_ai.TabIndex = 2;
-            this.checkBox_ai.Text = "人机对战";
-            this.checkBox_ai.UseVisualStyleBackColor = true;
-            this.checkBox_ai.Click += new System.EventHandler(this.checkBox_ai_Click);
             // 
             // groupBox1
             // 
@@ -73,6 +65,16 @@ namespace gobang
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "选择棋子颜色";
             // 
+            // rbt_color_white
+            // 
+            this.rbt_color_white.AutoSize = true;
+            this.rbt_color_white.Location = new System.Drawing.Point(27, 54);
+            this.rbt_color_white.Name = "rbt_color_white";
+            this.rbt_color_white.Size = new System.Drawing.Size(59, 22);
+            this.rbt_color_white.TabIndex = 0;
+            this.rbt_color_white.Text = "白色";
+            this.rbt_color_white.UseVisualStyleBackColor = true;
+            // 
             // rbt_color_black
             // 
             this.rbt_color_black.AutoSize = true;
@@ -84,18 +86,6 @@ namespace gobang
             this.rbt_color_black.TabStop = true;
             this.rbt_color_black.Text = "黑色";
             this.rbt_color_black.UseVisualStyleBackColor = true;
-            this.rbt_color_black.Click += new System.EventHandler(this.rbt_color_black_Click);
-            // 
-            // rbt_color_white
-            // 
-            this.rbt_color_white.AutoSize = true;
-            this.rbt_color_white.Location = new System.Drawing.Point(27, 54);
-            this.rbt_color_white.Name = "rbt_color_white";
-            this.rbt_color_white.Size = new System.Drawing.Size(59, 22);
-            this.rbt_color_white.TabIndex = 0;
-            this.rbt_color_white.Text = "白色";
-            this.rbt_color_white.UseVisualStyleBackColor = true;
-            this.rbt_color_white.Click += new System.EventHandler(this.rbt_color_white_Click);
             // 
             // groupBox2
             // 
@@ -111,7 +101,6 @@ namespace gobang
             // rbt_second
             // 
             this.rbt_second.AutoSize = true;
-            this.rbt_second.Enabled = false;
             this.rbt_second.Location = new System.Drawing.Point(27, 54);
             this.rbt_second.Name = "rbt_second";
             this.rbt_second.Size = new System.Drawing.Size(59, 22);
@@ -123,7 +112,6 @@ namespace gobang
             // 
             this.rbt_frist.AutoSize = true;
             this.rbt_frist.Checked = true;
-            this.rbt_frist.Enabled = false;
             this.rbt_frist.Location = new System.Drawing.Point(27, 26);
             this.rbt_frist.Name = "rbt_frist";
             this.rbt_frist.Size = new System.Drawing.Size(59, 22);
@@ -132,25 +120,49 @@ namespace gobang
             this.rbt_frist.Text = "先手";
             this.rbt_frist.UseVisualStyleBackColor = true;
             // 
-            // Form1
+            // label_count
+            // 
+            this.label_count.AutoSize = true;
+            this.label_count.Font = new System.Drawing.Font("Tahoma", 18F);
+            this.label_count.ForeColor = System.Drawing.Color.Maroon;
+            this.label_count.Location = new System.Drawing.Point(765, 363);
+            this.label_count.Name = "label_count";
+            this.label_count.Size = new System.Drawing.Size(31, 36);
+            this.label_count.TabIndex = 4;
+            this.label_count.Text = "0";
+            // 
+            // label_time
+            // 
+            this.label_time.AutoSize = true;
+            this.label_time.Location = new System.Drawing.Point(768, 687);
+            this.label_time.Name = "label_time";
+            this.label_time.Size = new System.Drawing.Size(52, 18);
+            this.label_time.TabIndex = 5;
+            this.label_time.Text = "0.00秒";
+            // 
+            // timer
+            // 
+            this.timer.Tick += new System.EventHandler(this.timer_Tick);
+            // 
+            // MainForm
             // 
             this.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
             this.Appearance.Options.UseBackColor = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(917, 714);
+            this.Controls.Add(this.label_time);
+            this.Controls.Add(this.label_count);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.checkBox_ai);
             this.Controls.Add(this.btn_start);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.InactiveGlowColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
             this.Margin = new System.Windows.Forms.Padding(4);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "Form1";
+            this.Name = "MainForm";
             this.Text = "AI五子棋";
-            this.Load += new System.EventHandler(this.Form1_Load);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form1_Paint);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);
             this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseMove);
@@ -166,13 +178,15 @@ namespace gobang
         #endregion
 
         private System.Windows.Forms.Button btn_start;
-        private System.Windows.Forms.CheckBox checkBox_ai;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.RadioButton rbt_color_white;
         private System.Windows.Forms.RadioButton rbt_color_black;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.RadioButton rbt_second;
         private System.Windows.Forms.RadioButton rbt_frist;
+        private System.Windows.Forms.Label label_count;
+        private System.Windows.Forms.Label label_time;
+        private System.Windows.Forms.Timer timer;
     }
 }
 
