@@ -15,6 +15,7 @@ namespace gobang
     {
         bool bStart = false;
         private Manager manager = new Manager();
+        Point lastCursorPoint;
         int time = 0;
         public MainForm()
         {
@@ -146,9 +147,16 @@ namespace gobang
 
         private void Form1_MouseMove(object sender, MouseEventArgs e)
         {
-            manager.Board.bSelectPoint = true;
-            manager.Board.SelectPoint = e.Location;
-            Draw();
+            int x = Math.Abs( lastCursorPoint.X - e.Location.X);
+            int y = Math.Abs( lastCursorPoint.Y - e.Location.Y);
+
+            if(x>20 || y>20)
+            {
+                lastCursorPoint = e.Location;
+                manager.Board.bSelectPoint = true;
+                manager.Board.SelectPoint = e.Location;
+                Draw();
+            }            
         }
 
         private void timer_Tick(object sender, EventArgs e)
